@@ -8,7 +8,7 @@ import os
 import argparse
 import numpy as np
 from torchvision import transforms
-
+from datetime import datetime
 
 def train_autoencoder(model, dataloader, criterion, optimizer, num_epochs=10):
 
@@ -16,23 +16,27 @@ def train_autoencoder(model, dataloader, criterion, optimizer, num_epochs=10):
     for epoch in range(num_epochs):
         running_loss = 0.0
         for images in dataloader:
-
-            print(f'Batch shape: {images.shape}')  # Debugging: print batch shape
             images = images.to(device)  # Move images to the device
             optimizer.zero_grad()  # Zero the gradients
 
             outputs = model(images)  # Forward pass
-            print(f'Output shape: {outputs.shape}')  # Debugging: print output shape
-            exit()
+
             loss = criterion(outputs, images)  # Compute the loss
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * images.size(0)
         epoch_loss = running_loss / len(dataloader.dataset)
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
+        if (epoch + 1) % 100 == 0:
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
 
     print("Training complete.")
-    torch.save(model.state_dict(), "autoencoder.pth")
+    # Save the trained model
+    if not os.path.exists("/autoencoders"):
+        os.makedirs("autoencoders")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_save_path = f"autoencoders/autoencoder_{timestamp}.pth"
+    print(f"Saving model to {model_save_path}")
+    torch.save(model.state_dict(), model_save_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train an autoencoder on binary images.")
@@ -54,7 +58,7 @@ if __name__ == "__main__":
     ]
 
     transform = transforms.Compose([
-        transforms.Resize((28, 28)),
+        # transforms.Resize((28, 28)),
         transforms.RandomChoice(augmentation_pool),
         transforms.ToTensor()
     ])
