@@ -3,6 +3,47 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
+import os
+from PIL import Image
+
+# Dataset class for loading binary images
+class BinaryImageDataset(Dataset):
+    def __init__(self, images_folder, transform=None):
+        """
+        Args:
+            images_folder (str): Path to the folder containing binary images.
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        self.images = []
+        for img_name in os.listdir(images_folder):
+            img_path = os.path.join(images_folder, img_name)
+            img = Image.open(img_path).convert("L")  # Convert to grayscale
+            img = np.array(img)
+            img = (img > 0).astype(np.float32)  # Binarize
+            # Resize image to 28x28 if necessary
+            if img.shape != (28, 28):
+                img = np.resize(img, (28, 28))
+            self.images.append(img)
+        self.images = np.array(self.images)
+
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        sample = self.images[idx]
+        sample = Image.fromarray((sample * 255).astype(np.uint8))  # Convert to PIL Image for transformations
+
+        # Save the image for visualization purposes
+        sample.save(f"sample_{idx}.png")
+        if self.transform:
+            sample = self.transform(sample)
+            # Save the transformed image for visualization purposes
+            
+        else:
+            sample = torch.tensor(np.array(sample), dtype=torch.float32).unsqueeze(0)
+        return sample
 
 # Encoder (mapping from image to latent space)
 class Encoder(nn.Module):
@@ -11,9 +52,9 @@ class Encoder(nn.Module):
 
         # First: pass image through convolutional layers
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),  # -> 14x14
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # -> 7x7
             nn.ReLU()
         )
 
@@ -45,17 +86,17 @@ class Decoder(nn.Module):
 
         # Second: pass through deconvolution layers to reconstruct the image 
         self.deconv_layers = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1), # -> 14x14
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 1, kernel_size=3, stride=2, padding=1)
+            nn.ConvTranspose2d(32, 1, kernel_size=3, stride=2, padding=1, output_padding=1), # -> 28x28
+            nn.Sigmoid()
         )
 
     def forward(self, z):
         z = self.linear_layers(z)
         z = z.view(z.size(0), 64, 7, 7)  # Reshape into feature map
         z = self.deconv_layers(z)
-        x_recon = torch.sigmoid(z)  # Sigmoid for binary output (0 or 1)
-        return x_recon
+        return z
 
 # Autoencoder model
 class Autoencoder(nn.Module):
