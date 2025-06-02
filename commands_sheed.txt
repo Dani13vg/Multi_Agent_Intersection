@@ -1,0 +1,27 @@
+### Running the simulation
+cd 'C:\Users\danie\OneDrive\Documentos\Inteligencia Artificial UAB\TUM\TFG\CARLA_0.9.10\WindowsNoEditor\Co-Simulation\Sumo'
+python run_synchronization.py sumo_files/sumocfg/09-11-15-30-00400-0.09-val_10m_35m-7.sumocfg --tls-manager carla --sumo-gui --step-length 0.1  --pretrained-weights  trained_params_archive/sumo_with_mpc_online_control/model_rot_gnn_mtl_wp_sumo_0911_e3_1910.pth
+
+### Loading the intersection map
+cd 'C:\Users\danie\OneDrive\Documentos\Inteligencia Artificial UAB\TUM\TFG\CARLA_0.9.10\WindowsNoEditor\PythonAPI\util'
+python config.py -x ../../Co-Simulation/Sumo/sumo_files/map/map_15m.xodr
+
+### Data generation
+cd 'C:\Users\danie\OneDrive\Documentos\Inteligencia Artificial UAB\TUM\TFG\MTP'
+
+# python generate_csv.py --num_seconds ${length of the generated sequence (unit: second)} --split ${train or val}
+python generate_csv.py --num_seconds 1000 --split train
+
+### Data preprocessing/augmentation
+cd 'C:\Users\danie\OneDrive\Documentos\Inteligencia Artificial UAB\TUM\TFG\MTP'
+python preprocess.py --csv_folder csv/<train_folder> --pkl_folder csv/<new_train_folder> --num_mpc_aug 2
+
+### SUMO Location
+'c:/users/danie/miniconda3/envs/mtp/lib/site-packages/sumo'
+
+export SUMO_HOME='c:/users/danie/miniconda3/envs/MTP/Lib/site-packages/sumo/bin/sumo.exe'
+
+### Inference with pretrained weights
+cd 'C:\Users\danie\OneDrive\Documentos\Inteligencia Artificial UAB\TUM\TFG\CARLA_0.9.10\WindowsNoEditor\Co-Simulation\Sumo'
+
+python run_synchronization.py  sumo_files/sumocfg/09-11-15-30-00400-0.09-val_10m_35m-7.sumocfg  --tls-manager carla  --sumo-gui  --step-length 0.1  --pretrained-weights '../../../../../MTP/trained_params/sumo_0402/model_gnn_np_sumo_0402_e3_0010.pth'
