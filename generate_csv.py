@@ -16,16 +16,20 @@ if __name__ == '__main__':
     parser.add_argument('--create_new_vehicle_prob', type=float, help='', default=0.05) # 0.09
     parser.add_argument('--split', type=str, help='train, val or test', default='train')
     parser.add_argument('--random_seed', type=int, help='', default=7)
-    
+    parser.add_argument('--map', type=str, help='map name', default='sumo/map/simple_separate_10m.net.xml')
+
     args = parser.parse_args()
 
     num_seconds = args.num_seconds
     create_new_vehicle_prob = args.create_new_vehicle_prob
     split = args.split
     random_seed = args.random_seed
+    net_xml_file = args.map
+
+    split = f'{split}_{num_seconds/1000}k_{net_xml_file[:-8]}' # The generated csv will be saved in a folder
 
     now = datetime.now().strftime("%m-%d-%H-%M")
-    route_file_name = f'{now}-{num_seconds:0>5}-{create_new_vehicle_prob}-{split}-{random_seed}'
+    route_file_name = f'{now}-{create_new_vehicle_prob}-{split}-{random_seed}'
     EDGE_FILTER = 'sumo/sumocfg/filter_edges_simple'
     TRAFFIC_SCALE = 1.0     # regulate the traffic flow
     LENGTH_PER_SCENE = (PRED_LEN + OBS_LEN) // SAMPLE_RATE    # obs + pred (seconds)
@@ -36,7 +40,7 @@ if __name__ == '__main__':
     # generate_routefile(rou_xml_filename=route_file_name, num_seconds=num_seconds, create_new_vehicle_prob=create_new_vehicle_prob, random_seed=random_seed)
     generate_routefile(rou_xml_filename=route_file_name, num_seconds=num_seconds, create_new_vehicle_prob=create_new_vehicle_prob, random_seed=random_seed, \
         straight_prob=0.8)
-    sumocfg_path = generate_sumocfg(route_file_name)
+    sumocfg_path = generate_sumocfg(net_xml_file, route_file_name)
 
     for dir in ['csv', 'fcd']:
         os.makedirs(dir, exist_ok = True)
