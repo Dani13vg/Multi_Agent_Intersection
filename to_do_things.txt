@@ -5,9 +5,11 @@ Objectives
 3) Generate a video of the csv data using matplotlib to see how the data looks like. ✅
 4) Try to generate new data and augment it with the new intersections. ✅
 5) Train the model with the new data and intersections. ✅
-6) Test the model with the new data and intersections in the CARLA_SUMO simulation. (Segmentation fault problems)
-7) Try testing on Only Sumo simulation with teletransportation.
-9) Implement the car transportation system.
-10) Create binary images that represent the structure of the intersection maps. ✅
-11) Train an autoencoder to generate an embedding of the intersection maps.
-12) Train the MTP model with multiple intersections at the same time.
+6) Test the model with the new data and intersections in the CARLA_SUMO simulation. (Segmentation fault problems).
+7) Try testing on Only Sumo simulation with teletransportation. (Segmentation fault problems). 
+8) Implement the car transportation system.
+9) Create binary images that represent the structure of the intersection maps. ✅
+10) Train an autoencoder to generate an embedding of the intersection maps. ✅
+11) Train the MTP model with multiple intersections at the same time.
+12) Modify the MTP model to use the intersection map embedding as input.
+13) Modify the MTP dataloader to load the intersection map embedding.
