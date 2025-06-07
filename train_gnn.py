@@ -6,13 +6,16 @@ import numpy as np
 import torch
 from torch import nn
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import GraphConv as GNNConv
+from model import GNN_mtl_gnn, GNN_mtl_mlp
 from tqdm import tqdm
+import wandb
+from datetime import datetime
 
 from dataset import CarDataset
 from utils.config import DT, OBS_LEN, PRED_LEN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 obs_len, pred_len, dt = OBS_LEN, PRED_LEN, DT
 
 parser = argparse.ArgumentParser(description="")
@@ -21,13 +24,20 @@ parser.add_argument('--val_folder', type=str, help='path to the validation set',
 parser.add_argument('--epoch', type=int, help='number of total training epochs', default=20)
 parser.add_argument('--exp_id', type=str, help='experiment ID', default='sumo')
 parser.add_argument('--batch_size', type=int, help='batch size', default=10)
+parser.add_argument('--map', type=str, help='map name', default='None')
 args = parser.parse_args()
 
 batch_size = args.batch_size   # 8000
-train_folder = args.train_folder
-val_folder = args.val_folder
+
+if args.map == "None":
+    train_folder = args.train_folder
+    val_folder = args.val_folder
+else:
+    train_folder = f"csv/train_pre_1k_{args.map}"
+    val_folder = f"csv/val_pre_1k_{args.map}"
+
 exp_id = args.exp_id
-model_path = f"trained_params/{exp_id}"
+model_path = f"trained_params/{exp_id}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{args.map}"
 os.makedirs(model_path, exist_ok=True)
 
 mlp = False
@@ -39,52 +49,31 @@ val_dataset = CarDataset(preprocess_folder=val_folder, mlp=False, mpc_aug=True)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=False)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=False)
 
-class GNN_mtl_gnn(torch.nn.Module):
-    def __init__(self, hidden_channels):
-        super().__init__()
-        torch.manual_seed(21)
-        self.conv1 = GNNConv(hidden_channels, hidden_channels)
-        self.conv2 = GNNConv(hidden_channels, hidden_channels)
-        self.linear1 = nn.Linear(5, 64)
-        self.linear2 = nn.Linear(64, hidden_channels)
-        self.linear3 = nn.Linear(hidden_channels, hidden_channels)
-        self.linear4 = nn.Linear(hidden_channels, hidden_channels)
-        self.linear5 = nn.Linear(hidden_channels, 30*2)
-
-    def forward(self, x, edge_index):
-        x = self.linear1(x).relu()
-        x = self.linear2(x).relu()
-        x = self.linear3(x).relu() + x
-        x = self.linear4(x).relu() + x
-        x = self.conv1(x, edge_index).relu()
-        x = self.conv2(x, edge_index).relu()
-        x = self.linear5(x)
-        return x  # mtl
-
-class GNN_mtl_mlp(torch.nn.Module):
-    def __init__(self, hidden_channels):
-        super().__init__()
-        torch.manual_seed(21)
-        self.conv1 = nn.Linear(hidden_channels, hidden_channels)
-        self.conv2 = nn.Linear(hidden_channels, hidden_channels)
-        self.linear1 = nn.Linear(5, 64)
-        self.linear2 = nn.Linear(64, hidden_channels)
-        self.linear3 = nn.Linear(hidden_channels, hidden_channels)
-        self.linear4 = nn.Linear(hidden_channels, hidden_channels)
-        self.linear5 = nn.Linear(hidden_channels, 30*2)
-
-    def forward(self, x, edge_index):
-        x = self.linear1(x).relu()
-        x = self.linear2(x).relu()
-        x = self.linear3(x).relu() + x
-        x = self.linear4(x).relu() + x
-        x = self.conv1(x).relu()
-        x = self.conv2(x).relu()
-        x = self.linear5(x)
-        return x  # mtl
-
 model = GNN_mtl_mlp(hidden_channels=128).to(device) if mlp else GNN_mtl_gnn(hidden_channels=128)
 print(model)
+
+ # --- WandB setup ---
+wandb_on = True
+if wandb_on:
+    run_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{args.map}"
+    wandb.init(
+        project="MTP",
+        entity="danivg",
+        name=run_name,
+        config={
+            "epoch": args.epoch,
+            "batch_size": batch_size,
+            "mlp": mlp,
+            "collision_penalty": collision_penalty,
+            "exp_id": exp_id,
+            "map": args.map,
+            "obs_len": obs_len,
+            "pred_len": pred_len,
+            "dt": dt
+        },
+        sync_tensorboard=True,
+        save_code=True,
+    )
 
 def rotation_matrix_back(yaw):
     """
@@ -238,6 +227,20 @@ for epoch in tqdm(range(0, args.epoch)):
         record.append([ade, fde, mr, collision_rate, val_losses, collision_penalties])
         print(f"Epoch {epoch}: Train Loss: {loss}, ADE: {ade}, FDE: {fde}, MR: {mr}, CR:{collision_rate}, \
             Val_loss: {val_losses}, CP: {collision_penalties}, lr: {optimizer.param_groups[0]['lr']}.")
+        
+        if wandb_on:
+            wandb.log({
+                "epoch": epoch,
+                "train_loss": loss,
+                "val_ade": ade,
+                "val_fde": fde,
+                "val_mr": mr,
+                "val_collision_rate": collision_rate,
+                "val_loss": val_losses,
+                "val_collision_penalties": collision_penalties,
+                "lr": optimizer.param_groups[0]['lr'],
+            }, step=epoch)
+            
         torch.save(model.state_dict(), model_path + \
             f"/model_{'mlp' if mlp else 'gnn'}_{'wp' if collision_penalty else 'np'}_{exp_id}_e3_{str(epoch).zfill(4)}.pth")
         if fde < min_fde:

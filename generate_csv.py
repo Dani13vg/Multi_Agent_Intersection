@@ -26,7 +26,7 @@ if __name__ == '__main__':
     random_seed = args.random_seed
     net_xml_file = args.map
 
-    split = f'{split}_{num_seconds/1000}k_{net_xml_file[:-8]}' # The generated csv will be saved in a folder
+    split = f'{split}_{int(num_seconds/1000)}k_{net_xml_file[:-8]}' # The generated csv will be saved in a folder
 
     now = datetime.now().strftime("%m-%d-%H-%M")
     route_file_name = f'{now}-{create_new_vehicle_prob}-{split}-{random_seed}'
