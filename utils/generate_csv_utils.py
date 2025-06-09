@@ -50,9 +50,8 @@ def generate_fcd(sumocfg_path: str,
 
     # new version: collect the data from the whole scene, and filter out the vehicle whose curr_pos is outside the central part in generate_csv_from_fcd
     if sys.platform == 'win32':
-        cmd = f"C:/Users/ZHD1ABT/Downloads/sumo-1.13.0/bin/sumo -c {sumocfg_path} --fcd-output {fcd_path} \
-            --begin {begin_time} --end {begin_time+offset_time+total_time} \
-            --step-length {step_length} --scale {traffic_scale}"
+        cmd = fr"'C:\Program Files (x86)\Eclipse\Sumo' -c {sumocfg_path} --fcd-output {fcd_path} --begin {begin_time} --end {begin_time+offset_time+total_time} --step-length {step_length} --scale {traffic_scale}"
+
     else:
         cmd = f"sumo -c {sumocfg_path} --fcd-output {fcd_path} --begin {begin_time} --end {begin_time+offset_time+total_time} \
             --step-length {step_length} --scale {traffic_scale}"
