@@ -4,8 +4,6 @@ import math
 import os
 import sys # Added for the current_dir logic in the original script
 
-# ... (Keep the parse_sumo_net_xml and generate_intersection_image functions from the previous answer here) ...
-
 # Definition of parse_sumo_net_xml
 def parse_sumo_net_xml(xml_file_path):
     """
@@ -122,9 +120,16 @@ def generate_intersection_image(xml_file_path, output_image_path,
 
 
 if __name__ == "__main__":
+
+    sys.argv = sys.argv[1:]  # Get command line arguments
+
+    if not sys.argv:
+        print("No input XML file specified.")
+        sys.exit(1)
+
     # --- Configuration for your specific file ---
-    input_xml_file = "sumo_files/map/simple_separate_10m.net.xml"
-    
+    input_xml_file = sys.argv[0]
+
     # Determine the output file name based on the input
     # e.g., "sumo_files/map/simple_inclined_10m.net.xml" -> "simple_inclined_10m_binary.png"
     base_name = os.path.basename(input_xml_file) # "simple_inclined_10m.net.xml"
