@@ -65,15 +65,17 @@ if __name__ == "__main__":
 
     dataset = BinaryImageDataset(images_folder, transform=transform)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    print(f"Number of images in dataset: {len(dataset)}")
 
     model = Autoencoder(latent_dim=64)  # Initialize the autoencoder with a latent dimension of 64
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     model.to(device)
 
     criterion = torch.nn.MSELoss()  # Loss function for reconstruction
     optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)  # Optimizer for training
 
     train_autoencoder(model, dataloader, criterion, optimizer, num_epochs=args.num_epochs)
-
+    
 # Execution example:
 # python train_autoencoder.py --num_epochs 20 --batch_size 64 --learning_rate 0.0001 --images_folder ./map_binary_images

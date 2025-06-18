@@ -1,13 +1,9 @@
 from autoencoder import Autoencoder
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
 import numpy as np
 from torchvision import transforms
-import os
-from datetime import datetime
 from PIL import Image
+import argparse
 
 def dummy_img():
     # Create a dummy image for testing with a circle
@@ -29,7 +25,11 @@ def dummy_img():
     # Use the dummy image for testing
     return dummy_image_tensor
 
-model_path = "autoencoders/autoencoder_20250525_201748.pth"
+argparse.add_argument('--input_image', type=str, default='val_map_binary_images/simple_inclined_3_10m_binary.png', help='Path to the input image')
+argparse.add_argument('--model_path', type=str, default='autoencoders/autoencoder_20250610_134704.pth', help='Path to the trained autoencoder model')
+args = argparse.parse_args()
+
+model_path = args.model_path
 
 # Load the model
 model = Autoencoder(latent_dim=64)
@@ -38,7 +38,7 @@ model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-input_image = 'map_binary_images/simple_separate_10m_binary.png'
+input_image = args.input_image
 
 # Load and preprocess the input image
 input_img_pil = Image.open(input_image).convert("L")
