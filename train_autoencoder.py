@@ -76,6 +76,6 @@ if __name__ == "__main__":
     optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)  # Optimizer for training
 
     train_autoencoder(model, dataloader, criterion, optimizer, num_epochs=args.num_epochs)
-    
+
 # Execution example:
 # python train_autoencoder.py --num_epochs 20 --batch_size 64 --learning_rate 0.0001 --images_folder ./map_binary_images

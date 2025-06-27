@@ -14,6 +14,7 @@ from datetime import datetime
 from dataset import CarDataset
 from utils.config import DT, OBS_LEN, PRED_LEN
 
+import pdb
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 obs_len, pred_len, dt = OBS_LEN, PRED_LEN, DT
@@ -108,7 +109,7 @@ def train(model, device, data_loader, optimizer, collision_penalty=False):
     for batch in data_loader:
         batch = batch.to(device)
         optimizer.zero_grad()
-        out = model(batch.x[:,[0,1,4,5,6]], batch.edge_index)   # [x, y, v, yaw, intention(3-bit)] -> [x, y, intention]
+        out = model(batch.x[:,[0,1,4,5,6]], batch.edge_index)   # [x, y, v, yaw, intention(3-bit)] -> [x, y, intention], edge_index = [edge, 2]
         out = out.reshape(-1,30,2)  # [v, pred, 2]
         out = out.permute(0,2,1)    # [v, 2, pred]
         yaw = batch.x[:,3].detach().cpu().numpy()
