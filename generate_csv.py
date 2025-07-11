@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('--create_new_vehicle_prob', type=float, help='', default=0.05) # 0.09
     parser.add_argument('--split', type=str, help='train, val or test', default='train')
     parser.add_argument('--random_seed', type=int, help='', default=7)
-    parser.add_argument('--map', type=str, help='map name', default='sumo/map/simple_separate_10m.net.xml')
+    parser.add_argument('--map', type=str, help='map name', default='simple_separate_10m.net.xml') # Maps in sumo/map/
 
     args = parser.parse_args()
 
