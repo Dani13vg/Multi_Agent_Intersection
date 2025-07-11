@@ -54,7 +54,7 @@ model = GNN_mtl_mlp(hidden_channels=128).to(device) if mlp else GNN_mtl_gnn(hidd
 print(model)
 
  # --- WandB setup ---
-wandb_on = True
+wandb_on = False
 if wandb_on:
     run_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{args.map}"
     wandb.init(
@@ -110,12 +110,14 @@ def train(model, device, data_loader, optimizer, collision_penalty=False):
         batch = batch.to(device)
         optimizer.zero_grad()
         out = model(batch.x[:,[0,1,4,5,6]], batch.edge_index)   # [x, y, v, yaw, intention(3-bit)] -> [x, y, intention], edge_index = [edge, 2]
-        out = out.reshape(-1,30,2)  # [v, pred, 2]
+
+        out = out.reshape(-1,30,2)  # [v, pred*2] → [v, pred, 2] - example: [29, 60] → [v, 30, 2]
         out = out.permute(0,2,1)    # [v, 2, pred]
         yaw = batch.x[:,3].detach().cpu().numpy()
         rotations = torch.stack([rotation_matrix_back(yaw[i])  for i in range(batch.x.shape[0])]).to(out.device)
-        out = torch.bmm(rotations, out).permute(0,2,1)       # [v, pred, 2]
-        out += batch.x[:,[0,1]].unsqueeze(1)
+        out = torch.bmm(rotations, out).permute(0,2,1)  # [v, pred, 2]
+
+        out += batch.x[:,[0,1]].unsqueeze(1)  # batch.x[:,[0,1]] is [x, y] with shape [v, 2] with unsqueeze(1) it becomes [v, 1, 2]
         gt = batch.y.reshape(-1, 30, 6)[:,:,[0,1]]  # [x, y, v, yaw, acc, steering]
         error = ((gt-out).square().sum(-1) * step_weights).sum(-1)
         loss = (batch.weights * error).nanmean()
