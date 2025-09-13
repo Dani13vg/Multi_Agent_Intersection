@@ -123,7 +123,7 @@ def generate_intersection_image(xml_file_path, output_image_path,
 
 if __name__ == "__main__":
     # --- Configuration for your specific file ---
-    input_xml_file = "sumo_files/map/simple_separate_10m.net.xml"
+    input_xml_file = "sumo/map/x_separate_14m.net.xml"
     
     # Determine the output file name based on the input
     # e.g., "sumo_files/map/simple_inclined_10m.net.xml" -> "simple_inclined_10m_binary.png"
